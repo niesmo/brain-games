@@ -1,0 +1,12 @@
+.dotnet/
+bin/
+obj/
+node_modules/
+dist/
+.env
+.env.local
+*.user
+*.suo
+*.tmp
+*.log
+.DS_Store
