@@ -3,11 +3,6 @@ module BrainGames.Client.Main
 open System
 open Browser.Dom
 
-type View =
-    | Arena
-    | Progress
-    | Learn
-
 type Card =
     { Index: int
       Value: string
@@ -20,14 +15,12 @@ type Model =
       Moves: int
       MatchedPairs: int
       Status: string
-      ActiveView: View
       SessionName: string
       BestRun: int option }
 
 type Msg =
     | NewGame
     | FlipCard of int
-    | SetView of View
 
 let values = [ "A"; "B"; "C"; "D"; "E"; "F" ]
 
@@ -60,67 +53,47 @@ let initialModel () =
       FirstSelection = None
       Moves = 0
       MatchedPairs = 0
-      Status = "Flip two cards at a time. Clean runs will eventually feed your leaderboard profile."
-      ActiveView = Arena
+      Status = "Flip two cards at a time. Match every pair with as few moves as possible."
       SessionName = pickSessionName ()
       BestRun = None }
 
 let init () = initialModel ()
 
-let efficiencyLabel model =
-    match model.MatchedPairs, model.Moves with
-    | pairs, moves when pairs = values.Length -> "Board cleared"
-    | 0, _ -> "Warming up"
-    | _, moves when moves <= model.MatchedPairs * 2 -> "Locked in"
-    | _, moves when moves <= model.MatchedPairs * 3 -> "Steady"
-    | _ -> "Recovering"
-
 let completionPercent model =
-    (float model.MatchedPairs / float values.Length) * 100.0 |> int
+    (float model.MatchedPairs / float values.Length)
+    * 100.0
+    |> int
 
 let remainingPairs model = values.Length - model.MatchedPairs
 
-let targetMoves = (values.Length * 2) + 2
+let focusScore model =
+    max 0 (100 - ((model.Moves - model.MatchedPairs) * 8))
 
-let momentumCopy model =
+let pulseLabel model =
     match model.MatchedPairs, model.Moves with
-    | pairs, _ when pairs = values.Length -> "Full clear secured. This run is ready for leaderboard wiring."
-    | 0, 0 -> "Fresh board. Start with the corners and build a clean mental map."
-    | pairs, moves when moves <= (pairs * 2) + 1 -> "Momentum is high. Keep the rhythm and avoid panic flips."
-    | _, _ -> "The board is still recoverable. Slow down and re-anchor on known pairs."
-
-let focusBand model =
-    match completionPercent model with
-    | percent when percent >= 100 -> "Launch-ready"
-    | percent when percent >= 67 -> "Dialed in"
-    | percent when percent >= 34 -> "Building pace"
-    | _ -> "Warm-up"
-
-let progressCopy view =
-    match view with
-    | Arena -> "Play the live board and sharpen pattern recall."
-    | Progress -> "Track what a better run should optimize next."
-    | Learn -> "Translate each round into short retention habits."
+    | pairs, _ when pairs = values.Length -> "Cleared"
+    | 0, 0 -> "Idle"
+    | _, moves when moves <= model.MatchedPairs * 2 -> "Sharp"
+    | _, moves when moves <= model.MatchedPairs * 3 -> "Steady"
+    | _ -> "Recovering"
 
 let cardLabel card =
-    if card.Revealed || card.Matched then card.Value else "?"
+    if card.Revealed || card.Matched then
+        card.Value
+    else
+        "?"
 
 let cardClass card =
-    if card.Matched then "memory-card matched"
-    elif card.Revealed then "memory-card revealed"
-    else "memory-card"
-
-let navClass current target =
-    if current = target then "nav-button active" else "nav-button"
-
-let viewName view =
-    match view with
-    | Arena -> "Arena"
-    | Progress -> "Progress"
-    | Learn -> "Lessons"
+    if card.Matched then
+        "memory-card matched"
+    elif card.Revealed then
+        "memory-card revealed"
+    else
+        "memory-card"
 
 let tryFindCard index cards =
-    cards |> List.tryFind (fun card -> card.Index = index)
+    cards
+    |> List.tryFind (fun card -> card.Index = index)
 
 let revealCard index cards =
     cards
@@ -148,14 +121,7 @@ let hidePair first second cards =
 
 let update msg model =
     match msg with
-    | NewGame ->
-        { initialModel () with
-            ActiveView = model.ActiveView
-            BestRun = model.BestRun }
-    | SetView view ->
-        { model with
-            ActiveView = view
-            Status = progressCopy view }
+    | NewGame -> { initialModel () with BestRun = model.BestRun }
     | FlipCard index ->
         match tryFindCard index model.Cards with
         | Some card when not card.Matched && not card.Revealed ->
@@ -164,33 +130,41 @@ let update msg model =
                 { model with
                     Cards = revealCard index model.Cards
                     FirstSelection = Some index
-                    Status = "Good first read. Find the matching card before the board gets noisy." }
+                    Status = "Good start. Find the matching card." }
             | Some first when first <> index ->
                 let revealedCards = revealCard index model.Cards
-                let firstCard = revealedCards |> List.find (fun current -> current.Index = first)
-                let secondCard = revealedCards |> List.find (fun current -> current.Index = index)
-                let nextMoveCount = model.Moves + 1
+
+                let firstCard =
+                    revealedCards
+                    |> List.find (fun current -> current.Index = first)
+
+                let secondCard =
+                    revealedCards
+                    |> List.find (fun current -> current.Index = index)
+
+                let nextMoves = model.Moves + 1
 
                 if firstCard.Value = secondCard.Value then
                     let nextPairs = model.MatchedPairs + 1
+
                     let nextBest =
                         if nextPairs = values.Length then
                             match model.BestRun with
-                            | Some best -> Some(min best nextMoveCount)
-                            | None -> Some nextMoveCount
+                            | Some best -> Some(min best nextMoves)
+                            | None -> Some nextMoves
                         else
                             model.BestRun
 
                     let nextStatus =
                         if nextPairs = values.Length then
-                            $"Board cleared in {nextMoveCount} moves. Next step: wire this run into the live leaderboard."
+                            $"Board cleared in {nextMoves} moves."
                         else
-                            "Match found. Keep chaining clean reads."
+                            "Match found. Keep going."
 
                     { model with
                         Cards = markPair first index revealedCards
                         FirstSelection = None
-                        Moves = nextMoveCount
+                        Moves = nextMoves
                         MatchedPairs = nextPairs
                         BestRun = nextBest
                         Status = nextStatus }
@@ -198,75 +172,10 @@ let update msg model =
                     { model with
                         Cards = hidePair first index revealedCards
                         FirstSelection = None
-                        Moves = nextMoveCount
-                        Status = "Miss. Reset your mental map and scan the outer ring first." }
-            | _ ->
-                model
-        | _ ->
-            model
-
-let renderHero model =
-    let progressLabel = $"{completionPercent model}%%"
-
-    $"""
-    <section class="hero">
-      <div class="hero-copy">
-        <a class="skip-link" href="#main-content">Skip to main content</a>
-        <span class="eyebrow">Focused play over empty scrolling</span>
-        <h1>Brain Games turns quick sessions into repeatable momentum.</h1>
-        <p class="subhead">A sharper F# client, a cleaner game arena, and a UI that feels more like a product than a placeholder.</p>
-        <div class="hero-actions">
-          <button id="new-game-button" class="cta" type="button">Shuffle a fresh board</button>
-          <div class="session-chip">
-            <span class="session-kicker">Current session</span>
-            <strong>{model.SessionName}</strong>
-            <small>Focus band: {focusBand model}</small>
-          </div>
-        </div>
-      </div>
-      <div class="hero-aside">
-        <div class="hero-stat spotlight">
-          <span>Board progress</span>
-          <strong>{progressLabel}</strong>
-          <small>{model.MatchedPairs}/{values.Length} pairs solved</small>
-        </div>
-        <div class="hero-stat">
-          <span>Efficiency</span>
-          <strong>{efficiencyLabel model}</strong>
-          <small>{model.Moves} moves so far</small>
-        </div>
-        <div class="hero-stat">
-          <span>Best local run</span>
-          <strong>{model.BestRun |> Option.map string |> Option.defaultValue "None yet"}</strong>
-          <small>Moves to clear the full board</small>
-        </div>
-      </div>
-      <div class="hero-marquee" aria-label="Current session signals">
-        <div class="marquee-pill">
-          <span class="marquee-dot"></span>
-          <strong>Live arena</strong>
-          <small>Guest-friendly play remains part of the product flow.</small>
-        </div>
-        <div class="marquee-pill">
-          <strong>{remainingPairs model}</strong>
-          <small>pairs left to lock in</small>
-        </div>
-        <div class="marquee-pill">
-          <strong>{targetMoves}</strong>
-          <small>move target for a sharp clear</small>
-        </div>
-      </div>
-    </section>
-    """
-
-let renderNav model =
-    $"""
-    <nav class="nav" aria-label="Primary views">
-      <button id="nav-arena" class="{navClass model.ActiveView Arena}" type="button" aria-pressed="{(model.ActiveView = Arena).ToString().ToLowerInvariant()}">Arena</button>
-      <button id="nav-progress" class="{navClass model.ActiveView Progress}" type="button" aria-pressed="{(model.ActiveView = Progress).ToString().ToLowerInvariant()}">Progress</button>
-      <button id="nav-learn" class="{navClass model.ActiveView Learn}" type="button" aria-pressed="{(model.ActiveView = Learn).ToString().ToLowerInvariant()}">Lessons</button>
-    </nav>
-    """
+                        Moves = nextMoves
+                        Status = "Miss. Remember those positions and try again." }
+            | _ -> model
+        | _ -> model
 
 let renderCards model =
     model.Cards
@@ -274,200 +183,264 @@ let renderCards model =
         $"""<button id="card-{card.Index}" class="{cardClass card}" type="button" aria-label="Memory card {card.Index + 1}">{cardLabel card}</button>""")
     |> String.concat ""
 
-let renderMainPanel model =
-    let progressPercent = completionPercent model
-    let progressWidth = string progressPercent + "%"
-    let progressSummary = string progressPercent + "% complete with " + string (remainingPairs model) + " pairs left."
-    let nextGoal =
-        if model.MatchedPairs = values.Length then
-            "Submit score"
-        else
-            "Keep the streak clean"
+let renderFocusBars model =
+    [ 18; 32; 28; 44; 38; 52; 41; 57; 48; 64; 51; 46 ]
+    |> List.mapi (fun index height ->
+        let activeClass =
+            if index <= model.MatchedPairs then
+                "focus-bar active"
+            else
+                "focus-bar"
 
-    $"""
-    <section class="panel game-panel" id="main-content">
-      <div class="panel-head">
-        <div>
-          <span class="panel-kicker">Live board</span>
-          <h2>Memory Match Sprint</h2>
-        </div>
-        <div class="panel-pill">{viewName model.ActiveView}</div>
-      </div>
-      <p class="status-copy">{model.Status}</p>
-      <div class="signal-banner">
-        <strong>Momentum</strong>
-        <span>{momentumCopy model}</span>
-      </div>
-      <div class="board-meta">
-        <div class="meta-card">
-          <span>Moves</span>
-          <strong>{model.Moves}</strong>
-        </div>
-        <div class="meta-card">
-          <span>Pairs matched</span>
-          <strong>{model.MatchedPairs}/{values.Length}</strong>
-        </div>
-        <div class="meta-card">
-          <span>Next goal</span>
-          <strong>{nextGoal}</strong>
-        </div>
-      </div>
-      <div class="progress-rail" aria-label="Session progress">
-        <div class="progress-track">
-          <span class="progress-fill" style="width: {progressWidth}"></span>
-        </div>
-        <small>{progressSummary}</small>
-      </div>
-      <div class="board-stage">
-        <div class="board-shell">
-          <div class="memory-grid">{renderCards model}</div>
-        </div>
-      </div>
-    </section>
-    """
+        $"""<span class="{activeClass}" style="height: {height}px"></span>""")
+    |> String.concat ""
 
-let renderSidePanels model =
-    let viewSpecificPanel =
-        match model.ActiveView with
-        | Arena ->
-            """
-            <div class="panel">
-              <div class="panel-head">
-                <div>
-                  <span class="panel-kicker">Tactical cues</span>
-                  <h3>Stay ahead of the board</h3>
-                </div>
-              </div>
-              <div class="detail-card">
-                <strong>Open with structure</strong>
-                <p>Clear the corners first, then sweep inward. That reduces repeated misses.</p>
-              </div>
-              <div class="detail-card">
-                <strong>Play for the API loop</strong>
-                <p>The current backend already exposes registration, leaderboard, profile, and score endpoints.</p>
-              </div>
-            </div>
-            """
-        | Progress ->
-            $"""
-            <div class="panel">
-              <div class="panel-head">
-                <div>
-                  <span class="panel-kicker">Run analysis</span>
-                  <h3>What improves next</h3>
-                </div>
-              </div>
-              <div class="detail-card">
-                <strong>Current efficiency</strong>
-                <p>{efficiencyLabel model} play usually means fewer panic flips once the board is half-solved.</p>
-              </div>
-              <div class="detail-card">
-                <strong>Local best</strong>
-                <p>{model.BestRun |> Option.map (fun best -> $"Beat {best} moves on the next clear.") |> Option.defaultValue "Finish one full board to establish a benchmark."}</p>
-              </div>
-            </div>
-            """
-        | Learn ->
-            """
-            <div class="panel">
-              <div class="panel-head">
-                <div>
-                  <span class="panel-kicker">Lessons</span>
-                  <h3>Retention prompts</h3>
-                </div>
-              </div>
-              <div class="detail-card">
-                <strong>Chunk the grid</strong>
-                <p>Mentally divide the board into zones so each reveal reinforces a smaller map.</p>
-              </div>
-              <div class="detail-card">
-                <strong>Name the pair</strong>
-                <p>Give each symbol a short internal label. Retrieval gets faster when the cue is verbal.</p>
-              </div>
-            </div>
-            """
+let renderCountryRows model =
+    let completion = completionPercent model
 
-    $"""
-    <section class="stack">
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <span class="panel-kicker">Build status</span>
-            <h3>Current product slice</h3>
+    [ ("United States", "US", 142410, completion + 8)
+      ("Germany", "DE", 175133, max 28 (focusScore model))
+      ("Italy", "IT", 58173, max 20 (completion - 6))
+      ("England", "EN", 138110, max 24 (completion + 2))
+      ("United Kingdom", "UK", 182503, max 34 (focusScore model + 6)) ]
+    |> List.map (fun (name, flag, score, barValue) ->
+        let width = min 100 barValue
+        let widthLabel = $"{width}%%"
+
+        $"""
+        <div class="country-row">
+          <div class="country-meta">
+            <span class="flag-pill">{flag}</span>
+            <span>{name}</span>
           </div>
-        </div>
-        <div class="detail-card">
-          <strong>Frontend</strong>
-          <p>Playable F# memory loop running through Fable, Elmish, and Vite.</p>
-        </div>
-        <div class="detail-card">
-          <strong>Backend</strong>
-          <p>Boot, leaderboard, profile, and score submission endpoints are already present and compiling.</p>
-        </div>
-        <div class="detail-card">
-          <strong>Next product move</strong>
-          <p>Connect registration, profile fetches, and score posting without forcing auth for every player.</p>
-        </div>
-      </div>
-      <div class="panel accent-panel">
-        <div class="panel-head">
-          <div>
-            <span class="panel-kicker">Session radar</span>
-            <h3>What to optimize</h3>
+          <div class="country-track">
+            <span class="country-fill" style="width: {widthLabel}"></span>
           </div>
+          <strong>{score}</strong>
         </div>
-        <div class="detail-card">
-          <strong>Accuracy first</strong>
-          <p>Perfect memory beats frantic clicking. The board rewards controlled reads more than raw speed.</p>
-        </div>
-        <div class="detail-card">
-          <strong>Clear target</strong>
-          <p>{if model.Moves <= targetMoves then "You are inside the target pace window." else "Trim extra flips and you move back into scoring range."}</p>
-        </div>
-      </div>
-      {viewSpecificPanel}
-    </section>
-    """
+        """)
+    |> String.concat ""
 
-let render model dispatch =
+let view model dispatch =
     document.title <- "Brain Games"
+    let progressLabel = $"{completionPercent model}%%"
+    let focusScoreLabel = $"{focusScore model}"
+    let focusBars = renderFocusBars model
+    let countryRows = renderCountryRows model
 
-    match document.getElementById("app") with
-    | null ->
-        console.error("Brain Games could not find the #app mount node.")
+    match document.getElementById ("app") with
+    | null -> console.error ("Brain Games could not find the #app mount node.")
     | mountPoint ->
         mountPoint.innerHTML <-
             $"""
             <main class="shell">
-              {renderHero model}
-              {renderNav model}
-              <section class="content-grid">
-                {renderMainPanel model}
-                {renderSidePanels model}
+              <a class="skip-link" href="#game-board">Skip to game board</a>
+              <aside class="sidebar">
+                <div class="brand-block">
+                  <div class="brand-mark">
+                    <span class="brand-mark-a"></span>
+                    <span class="brand-mark-b"></span>
+                    <span class="brand-mark-c"></span>
+                  </div>
+                  <div>
+                    <strong>Brain Games</strong>
+                    <small>Operator View</small>
+                  </div>
+                </div>
+
+                <nav class="side-nav" aria-label="Primary">
+                  <button class="nav-item active" type="button">Dashboard</button>
+                  <button class="nav-item" type="button">Sessions</button>
+                  <button class="nav-item" type="button">Leaderboard</button>
+                  <button class="nav-item" type="button">Players</button>
+                  <button class="nav-item" type="button">Reports</button>
+                </nav>
+
+                <div class="side-section">
+                  <span class="side-label">Current mode</span>
+                  <div class="side-chip">Memory Match Sprint</div>
+                </div>
+
+                <div class="side-footer">
+                  <div class="session-chip dark">
+                    <span>Session</span>
+                    <strong>{model.SessionName}</strong>
+                  </div>
+                  <div class="sidebar-note">
+                    Guest play remains active while the dashboard shell previews future analytics surfaces.
+                  </div>
+                </div>
+              </aside>
+
+              <section class="workspace">
+                <header class="topbar">
+                  <label class="search-shell" aria-label="Search">
+                    <span class="search-icon">⌕</span>
+                    <input class="search-input" type="text" value="search" readonly />
+                  </label>
+                  <div class="topbar-actions">
+                    <button class="icon-button" type="button">◌</button>
+                    <div class="account-chip">
+                      <span class="avatar-pill">BG</span>
+                      <div>
+                        <strong>Brain Games</strong>
+                        <small>Administrator</small>
+                      </div>
+                    </div>
+                  </div>
+                </header>
+
+                <section class="page-header">
+                  <div class="page-header-copy">
+                    <span class="eyebrow">Memory Match Sprint</span>
+                    <h1>The game board comes first.</h1>
+                    <p class="subhead">Everything else supports the live run: the board stays central, progress stays close, and analytics move into the background.</p>
+                  </div>
+                  <div class="page-actions">
+                    <div class="session-chip">
+                      <span>Active session</span>
+                      <strong>{model.SessionName}</strong>
+                    </div>
+                    <button id="new-game-button" class="cta" type="button">Start fresh board</button>
+                  </div>
+                </section>
+
+                <section class="stats-strip" aria-label="Current run stats">
+                  <div class="stat-card">
+                    <span>Moves</span>
+                    <strong>{model.Moves}</strong>
+                    <small>{pulseLabel model}</small>
+                  </div>
+                  <div class="stat-card">
+                    <span>Pairs</span>
+                    <strong>{model.MatchedPairs}/{values.Length}</strong>
+                    <small>{remainingPairs model} left</small>
+                  </div>
+                  <div class="stat-card">
+                    <span>Best Run</span>
+                    <strong>{model.BestRun
+                             |> Option.map string
+                             |> Option.defaultValue "-"}</strong>
+                    <small>Personal baseline</small>
+                  </div>
+                  <div class="stat-card">
+                    <span>Focus Score</span>
+                    <strong>{focusScoreLabel}</strong>
+                    <small>{progressLabel} complete</small>
+                  </div>
+                </section>
+
+                <section class="panel board-hero" id="game-board">
+                  <div class="board-hero-head">
+                    <div class="panel-head-copy">
+                      <h2>Live board</h2>
+                      <p class="status-copy">{model.Status}</p>
+                    </div>
+                    <div class="panel-head-meta">
+                      <span class="legend-pill"><span class="legend-dot purple"></span> Focus pulse</span>
+                      <span class="legend-pill"><span class="legend-dot green"></span> Matched cards</span>
+                    </div>
+                  </div>
+
+                  <div class="board-hero-grid">
+                    <div class="board-shell">
+                      <div class="board-grid-wrap">
+                        <div class="memory-grid featured-grid">{renderCards model}</div>
+                      </div>
+                    </div>
+
+                    <div class="board-side">
+                      <div class="snapshot-card spotlight-card">
+                        <strong>{progressLabel}</strong>
+                        <span>Board completion</span>
+                      </div>
+
+                      <div class="snapshot-card">
+                        <strong>{focusScoreLabel}</strong>
+                        <span>Estimated control score</span>
+                      </div>
+
+                      <div class="snapshot-card">
+                        <strong>{model.SessionName}</strong>
+                        <span>Active session label</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="support-grid">
+                  <section class="panel support-panel compact-panel">
+                    <div class="panel-head">
+                      <div class="panel-head-copy">
+                        <h2>Focus Trend</h2>
+                        <p class="status-copy">Compact run telemetry that supports the board instead of competing with it.</p>
+                      </div>
+                    </div>
+
+                    <div class="focus-chart compact-chart">
+                      <div class="focus-axis">
+                        <span>50k</span>
+                        <span>30k</span>
+                        <span>10k</span>
+                      </div>
+                      <div class="focus-bars">
+                        {focusBars}
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="panel activity-panel compact-panel">
+                    <div class="panel-head">
+                      <div class="panel-head-copy">
+                        <h2>Recent Country Activities</h2>
+                        <p class="status-copy">Secondary activity context and ranked traffic signals.</p>
+                      </div>
+                      <div class="panel-head-meta">
+                        <span class="legend-pill"><span class="legend-dot purple"></span> Activity pulse</span>
+                        <span class="legend-pill"><span class="legend-dot blue"></span> Ranked traffic</span>
+                      </div>
+                    </div>
+
+                    <div class="activity-grid">
+                      <div class="map-card">
+                        <div class="dot-map">
+                          <span class="map-dot dot-a"></span>
+                          <span class="map-dot dot-b"></span>
+                          <span class="map-dot dot-c"></span>
+                          <span class="map-dot dot-d"></span>
+                          <span class="map-dot dot-e"></span>
+                          <span class="map-tooltip">United States · 46.057</span>
+                        </div>
+                      </div>
+
+                      <div class="country-list">
+                        <div class="impression-block">
+                          <strong>245.145</strong>
+                          <span>Impressions</span>
+                        </div>
+                        {countryRows}
+                      </div>
+                    </div>
+                  </section>
+                </section>
               </section>
             </main>
             """
 
-        match document.getElementById("new-game-button") with
+        match document.getElementById ("new-game-button") with
         | null -> ()
-        | element -> element.addEventListener("click", fun _ -> dispatch NewGame)
-
-        [ ("nav-arena", Arena); ("nav-progress", Progress); ("nav-learn", Learn) ]
-        |> List.iter (fun (elementId, view) ->
-            match document.getElementById(elementId) with
-            | null -> ()
-            | element -> element.addEventListener("click", fun _ -> dispatch (SetView view)))
+        | element -> element.addEventListener ("click", (fun _ -> dispatch NewGame))
 
         model.Cards
         |> List.iter (fun card ->
-            match document.getElementById($"card-{card.Index}") with
+            match document.getElementById ($"card-{card.Index}") with
             | null -> ()
-            | element -> element.addEventListener("click", fun _ -> dispatch (FlipCard card.Index)))
+            | element -> element.addEventListener ("click", (fun _ -> dispatch (FlipCard card.Index))))
 
 let mutable currentModel = init ()
 
 let rec dispatch msg =
     currentModel <- update msg currentModel
-    render currentModel dispatch
+    view currentModel dispatch
 
-render currentModel dispatch
+view currentModel dispatch

@@ -26,6 +26,7 @@ Brain Games exists to give people a healthier alternative to empty social scroll
 - Keep the API as the trusted boundary for score validation, profile aggregation, and persistence rules.
 - Prefer persistence work before auth work. Durable profiles and score storage come before optional account login.
 - Use the `ui-ux-pro-max` skill before substantial UI implementation or redesign work.
+- Read `docs/ui-reference/README.md` when a future UI task needs a premium dark analytics/dashboard direction.
 - Keep `docs/plan.md` and `docs/todo.md` aligned whenever priorities or architecture decisions change.
 
 ## Current Vertical Slice
