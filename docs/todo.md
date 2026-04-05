@@ -20,24 +20,29 @@ Before starting any new work:
 - `[x]` Shared score-rule tests passing
 - `[x]` Server split into modules instead of one file
 - `[x]` Fantomas tool configured for repo-local formatting
+- `[x]` Docker local-dev workflow added for client and server
+- `[x]` Reusable dashboard UI reference documented for future agents
+- `[x]` Client redesigned into a game-first dark dashboard shell
 - `[ ]` Supabase auth wired in
 - `[ ]` Supabase persistence wired in
 - `[ ]` Persistence boundary introduced for in-memory vs Postgres-backed storage
 - `[ ]` SPA wired to registration/profile/leaderboard endpoints
+- `[ ]` Dashboard/support panels driven by live API data instead of placeholder metrics
 - `[ ]` End-to-end score submission verified through the SPA
 
 ## In Progress
 
-- Introduce persistence under the existing server API without forcing sign-in.
+- Introduce persistence under the existing server API without forcing sign-in, then replace placeholder client metrics with real server data.
 
 ## Next Up
 
 1. Add a storage abstraction in `src/Server` so the current in-memory flow and a Postgres-backed flow can share the same server logic.
 2. Persist player profiles and score attempts in Postgres while keeping guest registration available.
 3. Wire onboarding, leaderboard fetch, profile fetch, and score submission from the SPA to the server.
-4. Use the `ui-ux-pro-max` skill before reworking the onboarding/profile/leaderboard UI.
-5. Add optional Supabase auth only after persistence and guest-flow wiring are in place.
-6. Run the server locally and verify the leaderboard/profile endpoints with real requests against the chosen persistence mode.
+4. Replace placeholder dashboard/support data in the client with boot/profile/leaderboard data from the API.
+5. Use the `ui-ux-pro-max` skill before reworking the onboarding/profile/leaderboard UI again.
+6. Add optional Supabase auth only after persistence and guest-flow wiring are in place.
+7. Run the server locally and verify the leaderboard/profile endpoints with real requests against the chosen persistence mode.
 
 ## Notes To Future Sessions
 

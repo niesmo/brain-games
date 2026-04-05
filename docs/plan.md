@@ -32,11 +32,14 @@ Brain Games exists to give people a healthier alternative to empty social scroll
 ## Current Vertical Slice
 
 - `Memory Match Sprint` playable local game loop in the Fable client
+- Client UI now uses a game-first dark dashboard shell with the board as the primary focus
 - F# API endpoints for boot data, profile data, leaderboard data, and score submission
 - Shared domain contracts and score rules used across projects
 - In-repo planning artifacts and ADR trail for future sessions
 - Server code is modularized into configuration, seed data, store logic, and endpoint mapping
 - Repo-local Fantomas tooling is installed for formatting
+- Docker-based local development is available for running client and server together
+- A reusable dashboard style reference lives in `docs/ui-reference/README.md`
 
 ## Verified Progress
 
@@ -46,6 +49,9 @@ Brain Games exists to give people a healthier alternative to empty social scroll
 - Score rule tests pass
 - Server modularization is complete
 - Fantomas tooling is configured and runnable with `dotnet fantomas .`
+- Docker local-dev workflow is configured for the client and server
+- A reusable premium dark dashboard UI reference has been documented
+- The client has been redesigned into a game-first dashboard shell and pushed to `main`
 - Supabase persistence and optional auth wiring are still pending
 
 ## Recommended Hosting Shape
@@ -70,7 +76,7 @@ Brain Games exists to give people a healthier alternative to empty social scroll
 1. Add a persistence boundary in the server so in-memory and Postgres-backed storage can coexist behind the same application logic.
 2. Persist players and score attempts in Postgres without forcing auth.
 3. Connect the SPA to the existing API endpoints for guest registration, leaderboard fetch, profile fetch, and score submission.
-4. Add optional auth after persistence, keeping guest play intact.
-5. Use the `ui-ux-pro-max` skill to design onboarding, leaderboard, profile, and score-submission UI before a major client implementation pass.
+4. Replace placeholder dashboard/support metrics in the client with real API-backed data.
+5. Add optional auth after persistence, keeping guest play intact.
 6. Add anti-cheat hardening to the score submission endpoint.
 7. Introduce a second game category only after the memory loop, persistence, and onboarding loop are stable.
