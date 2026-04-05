@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Configuration.fs" />
+    <Compile Include="SeedData.fs" />
+    <Compile Include="Store.fs" />
+    <Compile Include="Endpoints.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
