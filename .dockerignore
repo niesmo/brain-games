@@ -1,0 +1,12 @@
+.git
+.gitignore
+.server.log
+.server.err.log
+.client.log
+.client.err.log
+.client.live.log
+.client.live.err.log
+**/bin
+**/obj
+**/dist
+**/node_modules

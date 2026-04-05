@@ -4,6 +4,8 @@ import fable from "vite-plugin-fable";
 export default defineConfig({
   plugins: [fable()],
   server: {
-    port: 5173
+    host: "0.0.0.0",
+    port: 5173,
+    strictPort: true
   }
 });

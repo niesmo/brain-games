@@ -1,0 +1,36 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server.dev
+    working_dir: /workspace
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+    ports:
+      - "5189:5189"
+    volumes:
+      - .:/workspace
+      - server-nuget:/root/.nuget/packages
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client.dev
+    working_dir: /workspace/src/Client
+    depends_on:
+      - server
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/workspace
+      - client-node-modules:/workspace/src/Client/node_modules
+      - client-nuget:/root/.nuget/packages
+
+volumes:
+  server-nuget:
+  client-node-modules:
+  client-nuget:

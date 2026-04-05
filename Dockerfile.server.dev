@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0
+
+WORKDIR /workspace
+
+EXPOSE 5189
+
+CMD ["sh", "-lc", "dotnet restore BrainGames.sln && dotnet watch --project src/Server/BrainGames.Server.fsproj run --urls http://0.0.0.0:5189"]
