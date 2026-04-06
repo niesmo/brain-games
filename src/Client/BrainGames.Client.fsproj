@@ -4,6 +4,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="src/Api.fs" />
+    <Compile Include="src/State.fs" />
+    <Compile Include="src/View.fs" />
     <Compile Include="src/Main.fs" />
   </ItemGroup>
 

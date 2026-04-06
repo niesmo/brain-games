@@ -81,33 +81,70 @@ type BootResponse =
 
 [<RequireQualifiedAccess>]
 module ScoreRules =
-    let private maxSeconds (scoreRequest: ScoreSubmissionRequest) =
-        max 15 scoreRequest.DurationSeconds
+    let private maxSeconds (scoreRequest: ScoreSubmissionRequest) = max 15 scoreRequest.DurationSeconds
+
+    let private validateCompletedSession (scoreRequest: ScoreSubmissionRequest) =
+        if scoreRequest.Moves < scoreRequest.MaxPairs then
+            Error "Moves cannot be lower than the completed objective count."
+        elif scoreRequest.MaxPairs <= 0 then
+            Error "Completed objective count must be greater than zero."
+        elif scoreRequest.MatchedPairs <> scoreRequest.MaxPairs then
+            Error "Only completed sessions can be submitted to the leaderboard."
+        else
+            Ok scoreRequest
 
     let validateSubmission (scoreRequest: ScoreSubmissionRequest) =
         if String.IsNullOrWhiteSpace scoreRequest.PlayerId then
             Error "A player id is required."
         elif String.IsNullOrWhiteSpace scoreRequest.GameId then
             Error "A game id is required."
-        elif scoreRequest.Moves < scoreRequest.MaxPairs then
-            Error "Moves cannot be lower than the number of pairs."
-        elif scoreRequest.MaxPairs <= 0 then
-            Error "Max pairs must be greater than zero."
-        elif scoreRequest.MatchedPairs <> scoreRequest.MaxPairs then
-            Error "Only completed memory runs can be submitted to the leaderboard."
         elif scoreRequest.DurationSeconds <= 0 then
             Error "Duration must be greater than zero."
         else
-            Ok scoreRequest
+            match scoreRequest.GameId.Trim().ToLowerInvariant() with
+            | "memory-match" -> validateCompletedSession scoreRequest
+            | "pattern-recall" -> validateCompletedSession scoreRequest
+            | _ -> validateCompletedSession scoreRequest
 
     let calculateScore (scoreRequest: ScoreSubmissionRequest) =
-        let basePoints = scoreRequest.MaxPairs * 120
-        let speedBonus = max 0 (900 - (maxSeconds scoreRequest * 9))
-        let efficiencyBonus = max 0 ((scoreRequest.MaxPairs * 12) - ((scoreRequest.Moves - scoreRequest.MaxPairs) * 6))
-        let difficultyBonus =
-            match scoreRequest.Difficulty.Trim().ToLowerInvariant() with
-            | "hard" -> 250
-            | "medium" -> 125
-            | _ -> 0
+        match scoreRequest.GameId.Trim().ToLowerInvariant() with
+        | "pattern-recall" ->
+            let basePoints = scoreRequest.MaxPairs * 180
+            let speedBonus = max 0 (1200 - (maxSeconds scoreRequest * 6))
 
-        basePoints + speedBonus + efficiencyBonus + difficultyBonus
+            let accuracyBonus =
+                max
+                    0
+                    ((scoreRequest.MaxPairs * 26)
+                     - ((scoreRequest.Moves - scoreRequest.MaxPairs) * 12))
+
+            let difficultyBonus =
+                match scoreRequest.Difficulty.Trim().ToLowerInvariant() with
+                | "hard" -> 320
+                | "medium" -> 160
+                | _ -> 0
+
+            basePoints
+            + speedBonus
+            + accuracyBonus
+            + difficultyBonus
+        | _ ->
+            let basePoints = scoreRequest.MaxPairs * 120
+            let speedBonus = max 0 (900 - (maxSeconds scoreRequest * 9))
+
+            let efficiencyBonus =
+                max
+                    0
+                    ((scoreRequest.MaxPairs * 12)
+                     - ((scoreRequest.Moves - scoreRequest.MaxPairs) * 6))
+
+            let difficultyBonus =
+                match scoreRequest.Difficulty.Trim().ToLowerInvariant() with
+                | "hard" -> 250
+                | "medium" -> 125
+                | _ -> 0
+
+            basePoints
+            + speedBonus
+            + efficiencyBonus
+            + difficultyBonus

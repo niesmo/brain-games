@@ -228,6 +228,19 @@ input {
   padding: 20px 24px 28px;
 }
 
+.app-workspace {
+  grid-template-rows: auto auto 1fr;
+}
+
+.compact-topbar {
+  padding-bottom: 6px;
+}
+
+.page-intro {
+  display: grid;
+  gap: 10px;
+}
+
 .topbar {
   justify-content: space-between;
   gap: 20px;
@@ -437,6 +450,10 @@ input {
   display: grid;
   justify-items: center;
   align-self: start;
+}
+
+.board-shell-lg {
+  padding: 22px;
 }
 
 .board-grid-wrap {
@@ -683,11 +700,276 @@ input {
   line-height: 1.5;
 }
 
+.banner {
+  padding: 14px 16px;
+  border: 1px solid rgba(127, 192, 255, 0.2);
+  border-radius: 16px;
+  background: rgba(127, 192, 255, 0.08);
+  color: var(--text);
+}
+
+.error-banner {
+  border-color: rgba(235, 127, 155, 0.22);
+  background: rgba(235, 127, 155, 0.1);
+}
+
+.profile-stack,
+.profile-list,
+.lesson-list {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-summary h3,
+.lesson-item strong {
+  margin: 0;
+  font-family: "Outfit", "Inter", sans-serif;
+  color: var(--text);
+}
+
+.profile-line,
+.lesson-item {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-alt);
+}
+
+.profile-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.profile-line span,
+.lesson-item span,
+.empty-state {
+  color: var(--muted);
+}
+
+.lesson-item {
+  display: grid;
+  gap: 6px;
+}
+
+.leaderboard-row strong {
+  font-size: 0.9rem;
+}
+
+.empty-state {
+  padding: 18px 0;
+}
+
+.play-layout,
+.leaderboard-layout,
+.progress-layout,
+.leaderboard-grid,
+.progress-grid,
+.leaderboard-list,
+.play-grid,
+.play-session-rail,
+.progress-meter-grid,
+.progress-notes,
+.game-switcher,
+.recall-grid {
+  display: grid;
+}
+
+.play-layout,
+.leaderboard-layout,
+.progress-layout {
+  gap: 18px;
+}
+
+.play-surface {
+  gap: 20px;
+}
+
+.game-switcher {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: 12px;
+}
+
+.game-pill {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 180ms ease, color 180ms ease, background-color 180ms ease;
+}
+
+.game-pill.active {
+  background: rgba(127, 192, 255, 0.14);
+  border-color: rgba(127, 192, 255, 0.24);
+  color: var(--accent-blue);
+}
+
+.play-surface-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.play-grid {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 22px;
+  align-items: start;
+}
+
+.play-session-rail,
+.leaderboard-list,
+.progress-meter-grid,
+.progress-notes {
+  gap: 14px;
+}
+
+.countdown-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(143, 136, 255, 0.24);
+  background: rgba(143, 136, 255, 0.12);
+  color: var(--accent-purple);
+  font-weight: 700;
+}
+
+.recall-grid {
+  gap: 10px;
+  width: fit-content;
+}
+
+.recall-tile {
+  width: 88px;
+  height: 88px;
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #2a2e36, #22262d);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.recall-tile:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+}
+
+.recall-tile.target-visible {
+  background: linear-gradient(180deg, rgba(127, 192, 255, 0.42), rgba(127, 192, 255, 0.18));
+  border-color: rgba(127, 192, 255, 0.42);
+  box-shadow: 0 0 0 4px rgba(127, 192, 255, 0.08);
+}
+
+.recall-tile.hit {
+  background: linear-gradient(180deg, rgba(78, 201, 135, 0.34), rgba(78, 201, 135, 0.18));
+  border-color: rgba(78, 201, 135, 0.42);
+}
+
+.recall-tile.miss {
+  background: linear-gradient(180deg, rgba(235, 127, 155, 0.28), rgba(235, 127, 155, 0.12));
+  border-color: rgba(235, 127, 155, 0.4);
+}
+
+.session-note-card,
+.leaderboard-row-card,
+.progress-meter-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-alt);
+  box-shadow: var(--shadow);
+}
+
+.session-note-card,
+.progress-meter-card {
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.session-note-card strong,
+.progress-meter-card strong,
+.leaderboard-rank,
+.leaderboard-player strong {
+  color: var(--text);
+  font-family: "Outfit", "Inter", sans-serif;
+}
+
+.leaderboard-strip,
+.progress-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.leaderboard-grid,
+.progress-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.spotlight-stat {
+  border-color: rgba(127, 192, 255, 0.2);
+  background: linear-gradient(180deg, rgba(127, 192, 255, 0.12), rgba(127, 192, 255, 0.04));
+}
+
+.leaderboard-row-card {
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 14px 16px;
+  align-items: center;
+}
+
+.leaderboard-rank {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(127, 192, 255, 0.12);
+  color: var(--accent-blue);
+  font-size: 1.1rem;
+}
+
+.leaderboard-player,
+.leaderboard-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.leaderboard-player span,
+.leaderboard-meta span {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.leaderboard-track {
+  grid-column: 2;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.progress-meter-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .cta:focus-visible,
 .memory-card:focus-visible,
+.recall-tile:focus-visible,
 .skip-link:focus-visible,
 .nav-item:focus-visible,
-.icon-button:focus-visible {
+.icon-button:focus-visible,
+.game-pill:focus-visible {
   outline: 3px solid var(--accent-blue);
   outline-offset: 3px;
 }
@@ -705,7 +987,11 @@ input {
 
   .activity-grid,
   .support-grid,
-  .board-hero-grid {
+  .board-hero-grid,
+  .play-grid,
+  .leaderboard-grid,
+  .progress-grid,
+  .progress-meter-grid {
     grid-template-columns: 1fr;
   }
 
@@ -734,7 +1020,8 @@ input {
   .topbar,
   .panel-head,
   .country-row,
-  .board-hero-head {
+  .board-hero-head,
+  .play-surface-head {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -747,6 +1034,15 @@ input {
   .page-actions .session-chip,
   .page-actions .cta {
     width: 100%;
+  }
+
+  .leaderboard-strip,
+  .progress-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .game-switcher {
+    grid-template-columns: 1fr;
   }
 
   .search-shell {

@@ -13,4 +13,4 @@ WORKDIR /workspace/src/Client
 
 EXPOSE 5173
 
-CMD ["sh", "-lc", "dotnet restore BrainGames.Client.fsproj && npm ci && npm run dev -- --host 0.0.0.0 --port 5173"]
+CMD ["sh", "-lc", "dotnet restore BrainGames.Client.fsproj && npm ci && while true; do npm run dev -- --host 0.0.0.0 --port 5173; echo 'client dev server exited, restarting in 1s'; sleep 1; done"]
